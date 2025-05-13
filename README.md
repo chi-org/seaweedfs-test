@@ -144,7 +144,7 @@ spec:
 
 
 ```bash
-k apply -f pod.yml,pvc.yml
+k apply -f test_deploy_3_rep.yml,pvc.yml
 ```
 
 
@@ -188,19 +188,15 @@ k apply -f pod.yml,pvc.yml
      ```
 
 
-   ![image-20250506105503903](./seaweedfs-notes.assets/image-20250506105503903.png)
+   <img src="./seaweedfs-notes.assets/image-20250506105503903.png" alt="image-20250506105503903" style="zoom: 50%;" />
 
-   ![image-20250506105637356](./seaweedfs-notes.assets/image-20250506105637356.png)
+   <img src="./seaweedfs-notes.assets/image-20250506105637356.png" alt="image-20250506105637356" style="zoom:50%;" />
 
-   ![image-20250506105755394](./seaweedfs-notes.assets/image-20250506105755394.png)
+   <img src="./seaweedfs-notes.assets/image-20250506105755394.png" alt="image-20250506105755394" style="zoom:50%;" />
 
-   
 
-3. Kubernetes Integration via CSI
 
-   
-
-4. API Support for File Operations
+3. API Support for File Operations
 
    https://github.com/seaweedfs/seaweedfs/wiki/Master-Server-API
 
@@ -210,16 +206,16 @@ k apply -f pod.yml,pvc.yml
 
    
 
-5. Health Monitoring and Recovery
+4. Backup and Recovery
    - Backup folders and files under filer dir (including meta data) 
      https://github.com/seaweedfs/seaweedfs/wiki/Async-Backup
-   
+
      ```bash
      # filer server
      weed scaffold -config=replication -output=.
      weed filer.backup
      ```
-   
+
      ```toml
      # replication.toml
      [sink.local]
@@ -236,15 +232,15 @@ k apply -f pod.yml,pvc.yml
      
      
    - Backup filer metadata store
-   
+
      https://github.com/seaweedfs/seaweedfs/wiki/Async-Filer-Metadata-Backup
-   
+
      ```bash
      # filer server
      weed scaffold -config=filer -output=.
      weed filer.meta.backup
      ```
-   
+
      ```toml
      # filer.toml
      [mysql]  # or memsql, tidb
@@ -273,20 +269,18 @@ k apply -f pod.yml,pvc.yml
      enableUpsert = true
      upsertQuery = """INSERT INTO `%s` (`dirhash`,`name`,`directory`,`meta`) VALUES (?,?,?,?) AS `new` ON DUPLICATE KEY UPDATE `meta` = `new`.`meta`"""
      ```
-   
+
      
-   
+
    - Backup volume data (manual backup data by volume ID):
-   
+
      https://github.com/seaweedfs/seaweedfs/wiki/Data-Backup
-   
+
      
-   
+
    - Backup PVC
-   
+
      https://github.com/seaweedfs/seaweedfs/wiki/Kubernetes-Backups-and-Recovery-with-K8up
-   
+
      
-   
-   - Health monitoring: api health
 
