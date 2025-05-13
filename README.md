@@ -72,7 +72,7 @@
 
    
 
-4. Install SeaweedFS CSI
+3. Install SeaweedFS CSI
 
    ```bash
    helm repo add seaweedfs-csi-driver https://seaweedfs.github.io/seaweedfs-csi-driver/helm
@@ -83,76 +83,76 @@
    
    helm upgrade --install seaweedfs-csi seaweedfs-csi-driver/seaweedfs-csi-driver   --namespace seaweedfs   --create-namespace -f seaweedfs_csi_values.yaml
    ```
-   
+
    ```yaml
    # seaweedfs_csi_values.yaml
    seaweedfsFiler: seaweedfs-filer.seaweedfs.svc.cluster.local:8888
    controller:
      replicas: 4
    ```
-   
+
    
 
 4. Test CSI
+   ```yaml
+   # pvc.yml
+   apiVersion: v1
+   kind: PersistentVolumeClaim
+   metadata:
+     name: seaweedfs-pvc
+     namespace: seaweedfs
+   spec:
+     accessModes:
+       - ReadWriteMany
+     resources:
+       requests:
+         storage: 5Gi
+     storageClassName: seaweedfs-storage
+   ```
 
-```yaml
-# pvc.yml
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: seaweedfs-pvc
-  namespace: seaweedfs
-spec:
-  accessModes:
-    - ReadWriteMany
-  resources:
-    requests:
-      storage: 5Gi
-  storageClassName: seaweedfs-storage
-```
+   ```yaml
+   # test_deploy_4_rep.yml
+   apiVersion: apps/v1
+   kind: Deployment
+   metadata:
+     name: ha-app
+   spec:
+     replicas: 4
+     selector:
+       matchLabels:
+         app: ha-app
+     template:
+       metadata:
+         labels:
+           app: ha-app
+       spec:
+         containers:
+           - name: test
+             image: ubuntu:22.04
+             command: ["sh", "-c", "sleep 36000"]
+             volumeMounts:
+               - name: shared-volume
+                 mountPath: /data
+         volumes:
+           - name: shared-volume
+             persistentVolumeClaim:
+               claimName: shared-pvc
+   ```
 
-```yaml
-# test_deploy_4_rep.yml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ha-app
-spec:
-  replicas: 4
-  selector:
-    matchLabels:
-      app: ha-app
-  template:
-    metadata:
-      labels:
-        app: ha-app
-    spec:
-      containers:
-        - name: test
-          image: ubuntu:22.04
-          command: ["sh", "-c", "sleep 36000"]
-          volumeMounts:
-            - name: shared-volume
-              mountPath: /data
-      volumes:
-        - name: shared-volume
-          persistentVolumeClaim:
-            claimName: shared-pvc
-```
+   ```bash
+   k apply -f test_deploy_4_rep.yml,pvc.yml
+   ```
 
-```bash
-k apply -f test_deploy_4_rep.yml,pvc.yml
-```
 
 
 
 5. API Support for File Operations
 
-https://github.com/seaweedfs/seaweedfs/wiki/Master-Server-API
+   https://github.com/seaweedfs/seaweedfs/wiki/Master-Server-API
 
-https://github.com/seaweedfs/seaweedfs/wiki/Volume-Server-API
+   https://github.com/seaweedfs/seaweedfs/wiki/Volume-Server-API
 
-https://github.com/seaweedfs/seaweedfs/wiki/Filer-Server-API
+   https://github.com/seaweedfs/seaweedfs/wiki/Filer-Server-API
 
 
 
