@@ -14,12 +14,12 @@
    helm upgrade --install seaweed seaweedfs/seaweedfs   --namespace seaweedfs   --create-namespace -f seaweed_values.yaml
    ```
 
-   ```bash
+   ```yaml
    # seaweed_values.yaml
    global:
      enableReplication: true
    	# 1 main + 1 replica, 1/3 node down, new data will be written in 2 nodes left
-   	replicationPlacement: "001" 
+     replicationPlacement: "001" 
    filer:
      enabled: true
      replicas: 3
@@ -54,6 +54,11 @@
      replicas: 3
    volume:
      replicas: 3
+     dataDirs:
+     - name: data1
+       type: "hostPath"
+       hostPathPrefix: /opt/shared
+       maxVolumes: 0
    ```
 
    
@@ -78,7 +83,7 @@
    helm upgrade --install seaweedfs-csi seaweedfs-csi-driver/seaweedfs-csi-driver   --namespace seaweedfs   --create-namespace -f seaweedfs_csi_values.yaml
    ```
    
-   ```bash
+   ```yaml
    # seaweedfs_csi_values.yaml
    seaweedfsFiler: seaweedfs-filer.seaweedfs.svc.cluster.local:8888
    controller:
@@ -156,6 +161,10 @@ k apply -f pod.yml,pvc.yml
 
    - Volume is only used for storing data, the metadata need to be kept in a metadata store (default is local leveldb2 - not good for HA)
 
+   - `volume.balance`: 
+
+   - `volume.fix.replication`
+
      
 
 2. I/O Performance
@@ -211,20 +220,21 @@ k apply -f pod.yml,pvc.yml
      weed filer.backup
      ```
    
-     ```bash
+     ```toml
      # replication.toml
-     [sink.local]                                                         enabled = true
+     [sink.local]
+     enabled = true
      directory = "/data"                                                  
      # all replicated files are under modified time as yyyy-mm-dd director# so each date directory contains all new and updated files.         
      is_incremental = false                                                  
      ```
-   
+     
      ```bash
      weed filer.copy ./path/to/folder_or_file http://filer_server:8888/
      ```
-   
      
-   
+     
+     
    - Backup filer metadata store
    
      https://github.com/seaweedfs/seaweedfs/wiki/Async-Filer-Metadata-Backup
@@ -235,7 +245,7 @@ k apply -f pod.yml,pvc.yml
      weed filer.meta.backup
      ```
    
-     ```bash
+     ```toml
      # filer.toml
      [mysql]  # or memsql, tidb
      # CREATE TABLE IF NOT EXISTS `filemeta` (
