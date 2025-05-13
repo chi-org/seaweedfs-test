@@ -18,8 +18,8 @@
    # seaweed_values.yaml
    global:
      enableReplication: true
-   	# 1 main + 1 replica, 4 nodes => if >2 nodes down, cannot write
-   	# Should fix.replication when 1 node down to prevent losing data when 2 nodes down
+     # 1 main + 1 replica, 4 nodes => if >2 nodes down, cannot write
+     # Should fix.replication when 1 node down to prevent losing data when 2 nodes down
      replicationPlacement: "001" 
    filer:
      enabled: true
