@@ -2,7 +2,7 @@
 
 
 
-1. Install SeaweedFS
+1. Install SeaweedFS (for filer metadata store, need mariadb installed with `sw_database` database and `filemeta` table and a user with suitable privileges)
 
    ```bash
    helm repo add seaweedfs https://seaweedfs.github.io/seaweedfs/helm
