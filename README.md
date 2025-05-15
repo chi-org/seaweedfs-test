@@ -116,6 +116,7 @@
    kind: Deployment
    metadata:
      name: ha-app
+     namespace: seaweedfs
    spec:
      replicas: 4
      selector:
@@ -136,9 +137,9 @@
          volumes:
            - name: shared-volume
              persistentVolumeClaim:
-               claimName: shared-pvc
+               claimName: seaweedfs-pvc
    ```
-
+   
    ```bash
    k apply -f test_deploy_4_rep.yml,pvc.yml
    ```
