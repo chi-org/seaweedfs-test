@@ -138,7 +138,7 @@ spec:
       volumes:
         - name: shared-volume
           persistentVolumeClaim:
-            claimName: shared-pvc
+            claimName: seaweedfs-pvc
 ```
 
 
