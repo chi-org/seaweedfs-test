@@ -52,13 +52,14 @@
            key: mysql_password
    master:
      replicas: 3
+     volumeSizeLimitMB: 1000
    volume:
      replicas: 3
      dataDirs:
      - name: data1
        type: "hostPath"
        hostPathPrefix: /opt/shared
-       maxVolumes: 0
+       maxVolumes: 0 # If set to zero on non-windows OS, the limit will be auto configured. (default "7")
    ```
 
    
@@ -95,11 +96,26 @@
 4. Test CSI
 
 ```yaml
-# pvc.yml
+# nmaa-pvc.yml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nmaa
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: seaweedfs-storage
+  csi:
+    driver: seaweedfs-csi-driver
+    volumeHandle: nmaa
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: seaweedfs-pvc
+  name: nmaa-pvc
   namespace: seaweedfs
 spec:
   accessModes:
@@ -108,12 +124,11 @@ spec:
     requests:
       storage: 5Gi
   storageClassName: seaweedfs-storage
+  volumeName: nmaa
 ```
 
-
-
 ```yaml
-# test_deploy_3_rep.yml
+# test_deploy_3_rep_nmaa.yml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -138,13 +153,11 @@ spec:
       volumes:
         - name: shared-volume
           persistentVolumeClaim:
-            claimName: shared-pvc
+            claimName: nmaa-pvc
 ```
 
-
-
 ```bash
-k apply -f test_deploy_3_rep.yml,pvc.yml
+k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
 ```
 
 
@@ -161,11 +174,15 @@ k apply -f test_deploy_3_rep.yml,pvc.yml
 
    - Volume is only used for storing data, the metadata need to be kept in a metadata store (default is local leveldb2 - not good for HA)
 
-   - `volume.balance`: 
+   - `lock`: prevent multiple processes run at them same time
+     ![image-20250514154938594](./README.assets/image-20250514154938594.png)
 
-   - `volume.fix.replication`
+   - `volume.balance` (need lock first, use `-force` to apply the changes): 
+     ![image-20250513171253174](./README.assets/image-20250513171253174.png)
 
-     
+   - `volume.fix.replication` (-force to apply the changes - need lock first if force): 
+     ![image-20250514144856031](./README.assets/image-20250514144856031.png)
+     - When node up again, there are some data have 3 replicas => run fix.replication => remove extra reps
 
 2. I/O Performance
 
@@ -224,13 +241,13 @@ k apply -f test_deploy_3_rep.yml,pvc.yml
      # all replicated files are under modified time as yyyy-mm-dd director# so each date directory contains all new and updated files.         
      is_incremental = false                                                  
      ```
-     
+
      ```bash
      weed filer.copy ./path/to/folder_or_file http://filer_server:8888/
      ```
+
      
-     
-     
+
    - Backup filer metadata store
 
      https://github.com/seaweedfs/seaweedfs/wiki/Async-Filer-Metadata-Backup
@@ -283,4 +300,27 @@ k apply -f test_deploy_3_rep.yml,pvc.yml
      https://github.com/seaweedfs/seaweedfs/wiki/Kubernetes-Backups-and-Recovery-with-K8up
 
      
+
+5. Others
+
+   1. `volume.dataDirs[0].maxVolumes: 2` & `master.volumeSizeLimitMB: 1000` => chỉ được tối đa 7 volume trên một node, nếu mỗi volume quá 1000mb => master chặn ghi
+      - upload file 14mb  => 3 volume ids created (2 each node)
+      - ![image-20250515103520628](./README.assets/image-20250515103520628.png)
+
+   2. `volume.dataDirs[0].maxVolumes: 2` & `master.volumeSizeLimitMB: 1`
+      - upload file 14mb => 3 volume ids created (2 each node) => stop write (cannot upload since master check volumeSizeLimit)
+   3. Whenever a file uploaded to pvc, it create a volume id which includes the name of the pv as prefix name (remember to have enough resource or the write operator will be restricted)
+   4. Use `volume.delete -node seaweedfs-volume-2.seaweedfs-volume.seaweedfs:8080 -volumeId 60` to delete volume. To delete all, clean all data from all host then helm reinstall.
+
+
+
+6. Test
+   1. Current Status:
+      - 3 nodes k8s (3 volume servers), 100gb hdd
+      - Max volume each volume server: 7
+      - Max volume size: 1gb
+   2. Test file storage:
+      - HA
+      - 
+   3. Test CSI:
 
