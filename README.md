@@ -2,7 +2,7 @@
 
 
 
-1. Install SeaweedFS
+1. Install SeaweedFS (for filer metadata store, need mariadb installed with `sw_database` database and `filemeta` table and a user with suitable privileges)
 
    ```bash
    helm repo add seaweedfs https://seaweedfs.github.io/seaweedfs/helm
@@ -304,14 +304,16 @@ k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
 
 5. Others
 
-   1. `volume.dataDirs[0].maxVolumes: 2` & `master.volumeSizeLimitMB: 1000` => exceed the limit => stop write
+   1. maxVolumes: 0 => auto configured as free disk space divided by volume size, if not set: 8 
+   
+   2. `volume.dataDirs[0].maxVolumes: 2` & `master.volumeSizeLimitMB: 1000` => exceed the limit => stop write
       - upload file 14mb  => 3 volume ids created (2 each node)
       - ![image-20250515103520628](./README.assets/image-20250515103520628.png)
-
-   2. `volume.dataDirs[0].maxVolumes: 2` & `master.volumeSizeLimitMB: 1`
+   
+   3. `volume.dataDirs[0].maxVolumes: 2` & `master.volumeSizeLimitMB: 1`
       - upload file 14mb => 3 volume ids created (2 each node) => stop write (cannot upload since master check volumeSizeLimit)
-   3. Whenever a file uploaded to pvc, it create a volume id which includes the name of the pv as prefix name (remember to have enough resource or the write operator will be restricted)
-   4. Use `volume.delete -node seaweedfs-volume-2.seaweedfs-volume.seaweedfs:8080 -volumeId 60` to delete volume. To delete all volumes, clean all data from all host then helm reinstall. To delete only all data: volume.vacuum or api /vacuum
+   4. Whenever a file uploaded to pvc, it create a volume id which includes the name of the pv as prefix name (remember to have enough resource or the write operator will be restricted)
+   5. Use `volume.delete -node seaweedfs-volume-2.seaweedfs-volume.seaweedfs:8080 -volumeId 60` to delete volume. To delete all volumes, clean all data from all host then helm reinstall. To delete only all data: volume.vacuum or api /vacuum
 
 
 
@@ -327,6 +329,6 @@ k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
       - Performance
         - Compare performance of seaweedfs vs disk with multiple small files / some large files (**File storage**)
         - Compare performance of seaweedfs vs disk with multiple small files / some large files (**CSI**)
-      - Scalability: add volume server, increase volume replica, `volume.grow`?
+      - Scalability: add volume server, increase volume replica, master api pre allocate volumes?
       - Auto backup
 
