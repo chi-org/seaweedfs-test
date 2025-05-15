@@ -304,14 +304,14 @@ k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
 
 5. Others
 
-   1. `volume.dataDirs[0].maxVolumes: 2` & `master.volumeSizeLimitMB: 1000` => chỉ được tối đa 7 volume trên một node, nếu mỗi volume quá 1000mb => master chặn ghi
+   1. `volume.dataDirs[0].maxVolumes: 2` & `master.volumeSizeLimitMB: 1000` => exceed the limit => stop write
       - upload file 14mb  => 3 volume ids created (2 each node)
       - ![image-20250515103520628](./README.assets/image-20250515103520628.png)
 
    2. `volume.dataDirs[0].maxVolumes: 2` & `master.volumeSizeLimitMB: 1`
       - upload file 14mb => 3 volume ids created (2 each node) => stop write (cannot upload since master check volumeSizeLimit)
    3. Whenever a file uploaded to pvc, it create a volume id which includes the name of the pv as prefix name (remember to have enough resource or the write operator will be restricted)
-   4. Use `volume.delete -node seaweedfs-volume-2.seaweedfs-volume.seaweedfs:8080 -volumeId 60` to delete volume. To delete all, clean all data from all host then helm reinstall.
+   4. Use `volume.delete -node seaweedfs-volume-2.seaweedfs-volume.seaweedfs:8080 -volumeId 60` to delete volume. To delete all volumes, clean all data from all host then helm reinstall. To delete only all data: volume.vacuum or api /vacuum
 
 
 
@@ -320,8 +320,13 @@ k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
       - 3 nodes k8s (3 volume servers), 100gb hdd
       - Max volume each volume server: 7
       - Max volume size: 1gb
-   2. Test file storage:
+   2. Test 
       - HA
-      - 
-   3. Test CSI:
+        - Auto `volume.fix.replication`
+        - Auto `volume.balance`
+      - Performance
+        - Compare performance of seaweedfs vs disk with multiple small files / some large files (**File storage**)
+        - Compare performance of seaweedfs vs disk with multiple small files / some large files (**CSI**)
+      - Scalability: add volume server, increase volume replica, `volume.grow`?
+      - Auto backup
 
