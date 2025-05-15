@@ -133,6 +133,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ha-app
+  namespace: seaweedfs
 spec:
   replicas: 3
   selector:
