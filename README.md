@@ -23,6 +23,11 @@
    filer:
      enabled: true
      replicas: 3
+     data:
+       type: "hostPath"
+       size: ""
+       storageClass: ""
+       hostPathPrefix: /storage
      extraEnvironmentVars:
        WEED_MYSQL_ENABLED: "true"
        WEED_MYSQL_HOSTNAME: "mariadb.nmaa.svc.cluster.local"
@@ -53,12 +58,39 @@
    master:
      replicas: 3
      volumeSizeLimitMB: 1000
+     # BACKUP PROCESS TO LOCAL (consider moving to another pod?)
+     # sidecars:
+     # - name: backup-filer-process
+     #   image: chrislusf/seaweedfs:3.85
+     #   command: 
+     #   - sh
+     #   - -c
+     #	  - |
+     #	    echo "[INFO] Generating replication.toml"
+     #	  	cat <<EOF > replication.toml
+     #     [sink.local]
+     #     enabled = true
+     #     directory = "/data/backup"
+     #     is_incremental = false
+     #     EOF
+     #	    echo "[INFO] Starting filer backup process"
+     #	    weed filer.backup -filer $WEED_CLUSTER_SW_FILER -doDeleteFiles
+     #   env:
+     #   - name: WEED_CLUSTER_SW_FILER
+     #	 	value: seaweedfs-filer-client.seaweedfs:8888
+     #	  volumeMounts:
+     #   - name: data-seaweedfs
+     #     mountPath: /data
+     data:
+       type: "hostPath"
+       storageClass: ""
+       hostPathPrefix: /ssd
    volume:
      replicas: 3
      dataDirs:
      - name: data1
        type: "hostPath"
-       hostPathPrefix: /opt/shared
+       hostPathPrefix: /ssd
        maxVolumes: 0 # If set to zero on non-windows OS, the limit will be auto configured. (default "7")
    ```
 
@@ -189,8 +221,13 @@ k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
 
    - Current status: 1 deployment 3 replicas, 1 pvc
 
-   - Exec into 1 pod:
+     - 3 nodes k8s (3 volume servers), 100gb hdd
 
+     - Max volume each volume server: auto configured
+     - Max volume size: 1gb
+   
+   - Run fio on pod:
+   
      ```bash
      apt update && apt install -y fio
      
@@ -206,13 +243,19 @@ k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
      ```
 
 
-   <img src="./seaweedfs-notes.assets/image-20250506105503903.png" alt="image-20250506105503903" style="zoom: 50%;" />
+   						<img src="./seaweedfs-notes.assets/image-20250506105503903.png" alt="image-20250506105503903" style="zoom: 50%;" />
 
-   <img src="./seaweedfs-notes.assets/image-20250506105637356.png" alt="image-20250506105637356" style="zoom:50%;" />
+   						<img src="./seaweedfs-notes.assets/image-20250506105637356.png" alt="image-20250506105637356" style="zoom:50%;" />
 
-   <img src="./seaweedfs-notes.assets/image-20250506105755394.png" alt="image-20250506105755394" style="zoom:50%;" />
+   						<img src="./seaweedfs-notes.assets/image-20250506105755394.png" alt="image-20250506105755394" style="zoom:50%;" />
 
+- Run fio on disk
 
+  ​					<img src="./README.assets/image-20250516161931458.png" alt="image-20250516161931458" style="zoom:50%;" />		
+
+​						<img src="./README.assets/image-20250516162035052.png" alt="image-20250516162035052" style="zoom:50%;" />
+
+<img src="./README.assets/image-20250516162157807.png" alt="image-20250516162157807" style="zoom:50%;" />
 
 3. API Support for File Operations
 
@@ -320,15 +363,63 @@ k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
 6. Test
    1. Current Status:
       - 3 nodes k8s (3 volume servers), 100gb hdd
-      - Max volume each volume server: 7
+      - Max volume each volume server: auto configured
       - Max volume size: 1gb
+      
    2. Test 
       - HA
-        - Auto `volume.fix.replication`
-        - Auto `volume.balance`
+        - Auto `volume.fix.replication` and `volume.balance`
+          ```yaml
+          apiVersion: batch/v1
+          kind: CronJob
+          metadata:
+            name: auto-fix-rep-and-balance
+            namespace: seaweedfs
+          spec:
+            schedule: "*/30 * * * *"
+            successfulJobsHistoryLimit: 1
+            failedJobsHistoryLimit: 1
+            jobTemplate:
+              spec:
+                template:
+                  spec:
+                    containers:
+                    - name: fix-replication-and-balance
+                      image: chrislusf/seaweedfs:3.85
+                      command:
+                        - sh
+                        - -c
+                        - |
+                          echo "[INFO] Volume List Before Fixing and Balancing"
+                          echo "volume.list" | weed shell -master $WEED_CLUSTER_SW_MASTER
+                          echo "[INFO] Start Fixing Replication..."
+                          echo "lock; volume.fix.replication -force -doDelete false; unlock" | weed shell -master $WEED_CLUSTER_SW_MASTER
+                          echo "[INFO] Start Balancing Volume..."
+                          echo "lock; volume.balance -force; volume.list unlock" | weed shell -master $WEED_CLUSTER_SW_MASTER;
+                          echo "[INFO] Volume List After Fixing and Balancing"                 	   echo "volume.list" | weed shell -master $WEED_CLUSTER_SW_MASTER
+                          echo "[INFO] Done"
+                      env:
+                        - name: WEED_CLUSTER_SW_MASTER
+                          value: "seaweedfs-master.seaweedfs:9333"
+                    restartPolicy: Never
+          ```
+        
+          ![image-20250516163152410](./README.assets/image-20250516163152410.png)
+        
       - Performance
-        - Compare performance of seaweedfs vs disk with multiple small files / some large files (**File storage**)
-        - Compare performance of seaweedfs vs disk with multiple small files / some large files (**CSI**)
-      - Scalability: add volume server, increase volume replica, master api pre allocate volumes?
-      - Auto backup
+        - Compare performance of seaweedfs vs disk with:
+        
+          - Multiple small files
+        
+          
+        
+          - Some large files
+        
+          
+        
+      - Scalability: add volume server, increase volume replica, master api pre allocate volumes to add volume data.
+      
+      - Auto backup: add sidecars container in master pod
+      
+      - Race condition risk (2 app write to the same PV)
 
