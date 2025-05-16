@@ -53,6 +53,29 @@
            key: mysql_password
    master:
      replicas: 3 # for Raft Algorithm
+     # BACKUP PROCESS TO LOCAL
+     # sidecars:
+     # - name: backup-filer-process
+     #   image: chrislusf/seaweedfs:3.85
+     #   command: 
+     #   - sh
+     #   - -c
+     #	  - |
+     #	    echo "[INFO] Generating replication.toml"
+     #	  	cat <<EOF > replication.toml
+     #     [sink.local]
+     #     enabled = true
+     #     directory = "/data/backup"
+     #     is_incremental = false
+     #     EOF
+     #	    echo "[INFO] Starting filer backup process"
+     #	    weed filer.backup -filer $WEED_CLUSTER_SW_FILER -doDeleteFiles
+     #   env:
+     #   - name: WEED_CLUSTER_SW_FILER
+     #	 	value: seaweedfs-filer-client.seaweedfs:8888
+     #	  volumeMounts:
+     #   - name: data-seaweedfs
+     #     mountPath: /data
    volume:
      replicas: 4
      dataDirs:
