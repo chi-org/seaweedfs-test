@@ -95,7 +95,46 @@
 
    
 
-3. Install SeaweedFS CSI
+3. Fix replication and balance cronjob
+
+   ```yaml
+   apiVersion: batch/v1
+   kind: CronJob
+   metadata:
+     name: auto-fix-rep-and-balance
+     namespace: seaweedfs
+   spec:
+     schedule: "*/30 * * * *"
+     successfulJobsHistoryLimit: 1
+     failedJobsHistoryLimit: 1
+     jobTemplate:
+       spec:
+         template:
+           spec:
+             containers:
+             - name: fix-replication-and-balance
+               image: chrislusf/seaweedfs:3.85
+               command:
+                 - sh
+                 - -c
+                 - |
+                   echo "[INFO] Volume List Before Fixing and Balancing"
+                   echo "volume.list" | weed shell -master $WEED_CLUSTER_SW_MASTER
+                   echo "[INFO] Start Fixing Replication..."
+                   echo "lock; volume.fix.replication -force -doDelete false; unlock" | weed shell -master $WEED_CLUSTER_SW_MASTER
+                   echo "[INFO] Start Balancing Volume..."
+                   echo "lock; volume.balance -force; volume.list unlock" | weed shell -master $WEED_CLUSTER_SW_MASTER;
+                   echo "[INFO] Volume List After Fixing and Balancing"                 	   echo "volume.list" | weed shell -master $WEED_CLUSTER_SW_MASTER
+                   echo "[INFO] Done"
+               env:
+                 - name: WEED_CLUSTER_SW_MASTER
+                   value: "seaweedfs-master.seaweedfs:9333"
+             restartPolicy: Never
+   ```
+
+   
+
+4. Install SeaweedFS CSI
 
    ```bash
    helm repo add seaweedfs-csi-driver https://seaweedfs.github.io/seaweedfs-csi-driver/helm
@@ -116,7 +155,7 @@
 
    
 
-4. Test CSI
+5. Test CSI
    ```yaml
    # pvc.yml
    apiVersion: v1
@@ -162,7 +201,7 @@
              persistentVolumeClaim:
                claimName: seaweedfs-pvc
    ```
-   
+
    ```bash
    k apply -f test_deploy_4_rep.yml,pvc.yml
    ```
