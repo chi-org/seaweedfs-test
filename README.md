@@ -58,7 +58,7 @@
    master:
      replicas: 3
      volumeSizeLimitMB: 1000
-     # BACKUP PROCESS TO LOCAL (consider moving to another pod?)
+     # BACKUP PROCESS TO LOCAL
      # sidecars:
      # - name: backup-filer-process
      #   image: chrislusf/seaweedfs:3.85
@@ -244,9 +244,9 @@ k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
 
 
    						<img src="./seaweedfs-notes.assets/image-20250506105503903.png" alt="image-20250506105503903" style="zoom: 50%;" />
-
+   	
    						<img src="./seaweedfs-notes.assets/image-20250506105637356.png" alt="image-20250506105637356" style="zoom:50%;" />
-
+   	
    						<img src="./seaweedfs-notes.assets/image-20250506105755394.png" alt="image-20250506105755394" style="zoom:50%;" />
 
 - Run fio on disk
@@ -405,17 +405,6 @@ k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
           ```
         
           ![image-20250516163152410](./README.assets/image-20250516163152410.png)
-        
-      - Performance
-        - Compare performance of seaweedfs vs disk with:
-        
-          - Multiple small files
-        
-          
-        
-          - Some large files
-        
-          
         
       - Scalability: add volume server, increase volume replica, master api pre allocate volumes to add volume data.
       
