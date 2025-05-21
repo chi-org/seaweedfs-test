@@ -53,6 +53,15 @@
            key: mysql_password
    master:
      replicas: 3 # for Raft Algorithm
+     config: |-
+       [master.maintenance]
+       script = """
+         lock
+         volume.balance -force
+         volume.fix.replication -force
+         unlock
+       """
+       sleep_minutes = 30
      # BACKUP PROCESS TO LOCAL
      # sidecars:
      # - name: backup-filer-process
