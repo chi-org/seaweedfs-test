@@ -58,6 +58,15 @@
    master:
      replicas: 3
      volumeSizeLimitMB: 1000
+     config: |-
+       [master.maintenance]
+       script = """
+         lock
+         volume.balance -force
+         volume.fix.replication -force
+         unlock
+       """
+       sleep_minutes = 30
      # BACKUP PROCESS TO LOCAL
      # sidecars:
      # - name: backup-filer-process
@@ -241,13 +250,14 @@ k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
      fio --name=randwrite-test --filename=/mnt/test/testfile --size=1G --bs=4k --rw=randwrite --ioengine=libaio --direct=1
      
      ```
+     
+     <img src="./seaweedfs-notes.assets/image-20250506105503903.png" alt="image-20250506105503903" style="zoom: 50%;" />
+     
+     <img src="./seaweedfs-notes.assets/image-20250506105637356.png" alt="image-20250506105637356" style="zoom:50%;" />
+     
+     <img src="./seaweedfs-notes.assets/image-20250506105755394.png" alt="image-20250506105755394" style="zoom:50%;" />
 
-
-   						<img src="./seaweedfs-notes.assets/image-20250506105503903.png" alt="image-20250506105503903" style="zoom: 50%;" />
-   	
-   						<img src="./seaweedfs-notes.assets/image-20250506105637356.png" alt="image-20250506105637356" style="zoom:50%;" />
-   	
-   						<img src="./seaweedfs-notes.assets/image-20250506105755394.png" alt="image-20250506105755394" style="zoom:50%;" />
+​					
 
 - Run fio on disk
 
@@ -368,7 +378,7 @@ k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
       
    2. Test 
       - HA
-        - Auto `volume.fix.replication` and `volume.balance`
+        - Auto `volume.fix.replication` and `volume.balance` by adding master.config in values file above or creating a cronjob:
           ```yaml
           apiVersion: batch/v1
           kind: CronJob
@@ -396,19 +406,22 @@ k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
                           echo "lock; volume.fix.replication -force -doDelete false; unlock" | weed shell -master $WEED_CLUSTER_SW_MASTER
                           echo "[INFO] Start Balancing Volume..."
                           echo "lock; volume.balance -force; volume.list unlock" | weed shell -master $WEED_CLUSTER_SW_MASTER;
-                          echo "[INFO] Volume List After Fixing and Balancing"                 	   echo "volume.list" | weed shell -master $WEED_CLUSTER_SW_MASTER
+                          echo "[INFO] Volume List After Fixing and Balancing"                 	   
+                          echo "volume.list" | weed shell -master $WEED_CLUSTER_SW_MASTER
                           echo "[INFO] Done"
                       env:
                         - name: WEED_CLUSTER_SW_MASTER
                           value: "seaweedfs-master.seaweedfs:9333"
                     restartPolicy: Never
           ```
-        
+          
           ![image-20250516163152410](./README.assets/image-20250516163152410.png)
         
       - Scalability: add volume server, increase volume replica, master api pre allocate volumes to add volume data.
       
       - Auto backup: add sidecars container in master pod
+      
+      - Increase volume number to increase concurrent reads and writes
       
       - Race condition risk (2 app write to the same PV)
 
