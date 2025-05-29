@@ -423,7 +423,15 @@ k apply -f test_deploy_3_rep_nmaa.yml,nmaa-pvc.yml
       
       - Increase volume number to increase concurrent reads and writes
       
-      - Race condition risk (2 app write to the same PV)
-      
       - Monitoring: send metrics
+
+
+
+
+
+### Testing:
+
+I/O performance
+
+Race condition risk (2 app write to the same PV)
 
