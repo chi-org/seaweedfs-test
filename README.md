@@ -18,7 +18,6 @@
    # seaweed_values.yaml
    global:
      enableReplication: true
-   	# 1 main + 1 replica, 1/3 node down, new data will be written in 2 nodes left
      replicationPlacement: "001" 
    filer:
      enabled: true
@@ -102,9 +101,9 @@
        hostPathPrefix: /ssd
        maxVolumes: 0 # If set to zero on non-windows OS, the limit will be auto configured. (default "7")
    ```
-
    
-
+   
+   
 2. Expose Filer Node Port:
 
    ```bash
