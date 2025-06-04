@@ -108,7 +108,7 @@
 2. Expose Filer Node Port:
 
    ```bash
-   k expose pod seaweedfs-filer-0 --type NodePort --name seaweedfs-filer-np -n seaweedf
+   k expose pod seaweedfs-filer-0 --type NodePort --name seaweedfs-filer-np -n seaweedfs
    ```
 
    
