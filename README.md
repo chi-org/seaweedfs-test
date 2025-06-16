@@ -90,8 +90,9 @@
      volumeSizeLimitMB: 1000
      config: |-
        [master.maintenance]
-       script = """
+       scripts = """
          lock
+         volume.check.disk 
          volume.balance -force
          volume.fix.replication -force
          unlock
