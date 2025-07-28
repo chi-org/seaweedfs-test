@@ -6,7 +6,7 @@
 
    ```mysql
    # MARIADB
-   CREATE DATABASE sw_database;
+   CREATE DATABASE IF NOT EXISTS sw_database;
    USE sw_database;
    CREATE TABLE IF NOT EXISTS filemeta (
      `dirhash`   BIGINT NOT NULL       COMMENT 'first 64 bits of MD5 hash value of directory field',
@@ -168,7 +168,7 @@
    seaweedfsFiler: seaweedfs-filer.seaweedfs.svc.cluster.local:8888
    cacheCapacityMB: 1024 # enable fuse cache, find cache in /var/cache/seaweedfs of csi-node pod
    controller:
-     replicas: 3
+     replicas: 1
    ```
 
    **!IMPORTANT NOTES!:**
