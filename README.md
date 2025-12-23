@@ -167,6 +167,8 @@
    # seaweedfs_csi_values.yaml
    seaweedfsFiler: seaweedfs-filer.seaweedfs.svc.cluster.local:8888
    cacheCapacityMB: 1024 # enable fuse cache, find cache in /var/cache/seaweedfs of csi-node pod
+   mountService:
+    enabled: true
    controller:
      replicas: 1
    ```
